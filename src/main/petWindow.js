@@ -9,6 +9,9 @@ const SIZE_MAX_PCT = 250;
 
 let petWindow = null;
 let petSize = PET_BASE; // 当前窗口边长（DIP），走动时随 setBounds 强制写回，避免 DPI 缩放下尺寸漂移
+// 走动热路径缓存：避免每跳都调用 screen.getPrimaryDisplay() / getPosition() 两个原生调用（实测主进程 CPU 大头）
+let walkPos = { x: 0, y: 0 };
+let walkArea = null;
 const walk = {
   enabled: true, dir: 1, walking: false,
   dragging: false, celebrating: false, hidden: false,
@@ -44,6 +47,8 @@ function createPetWindow() {
   });
   petWindow.setAlwaysOnTop(settings.behavior.alwaysOnTop, 'screen-saver');
   petWindow.loadFile(path.join(__dirname, '..', 'renderer', 'pet', 'index.html'));
+  petWindow.once('ready-to-show', syncWalkCache);
+  syncWalkCache();
   walk.enabled = settings.behavior.walk !== false;
   return petWindow;
 }
@@ -88,6 +93,15 @@ function ensureOnScreen() {
     petWindow.setBounds({ x: p.x, y: p.y, width: petSize, height: petSize });
     updateSettings({ pet: { ...getSettings().pet, x: p.x, y: p.y } });
   }
+  syncWalkCache();
+}
+
+// 与窗口实际位置/工作区同步（仅在非走动路径调用：创建、拖拽、缩放、自愈、显示）
+function syncWalkCache() {
+  if (!petWindow || petWindow.isDestroyed()) return;
+  const [x, y] = petWindow.getPosition();
+  walkPos = { x, y };
+  walkArea = screen.getPrimaryDisplay().workArea;
 }
 
 function sendPetCommand(cmd) {
@@ -117,12 +131,15 @@ function stopMoving(pauseMs) {
 
 function moveStep() {
   if (!petWindow || petWindow.isDestroyed()) return;
-  const wa = screen.getPrimaryDisplay().workArea;
-  const [x, y] = petWindow.getPosition();
-  let nx = x + walk.dir * 3; // ≈91px/s（33ms 一跳）
-  if (nx <= wa.x + 2 && walk.dir < 0) walk.dir = 1;
-  else if (nx + petSize >= wa.x + wa.width - 2 && walk.dir > 0) walk.dir = -1;
-  else { petWindow.setBounds({ x: nx, y, width: petSize, height: petSize }); return; }
+  if (!walkArea) syncWalkCache();
+  let nx = walkPos.x + walk.dir * 3; // ≈91px/s（33ms 一跳）
+  if (nx <= walkArea.x + 2 && walk.dir < 0) walk.dir = 1;
+  else if (nx + petSize >= walkArea.x + walkArea.width - 2 && walk.dir > 0) walk.dir = -1;
+  else {
+    walkPos.x = nx;
+    petWindow.setBounds({ x: nx, y: walkPos.y, width: petSize, height: petSize });
+    return;
+  }
   sendPetCommand({ type: 'walk', dir: walk.dir });
 }
 
@@ -165,6 +182,7 @@ function movePet(dx, dy) {
   const nx = Math.min(Math.max(x + dx, wa.x - petSize + REACH_MARGIN), wa.x + wa.width - REACH_MARGIN);
   const ny = Math.min(Math.max(y + dy, wa.y - petSize + REACH_MARGIN), wa.y + wa.height - REACH_MARGIN);
   petWindow.setPosition(nx, ny);
+  walkPos = { x: nx, y: ny };
 }
 
 function resizePet(pct) {
@@ -178,6 +196,7 @@ function resizePet(pct) {
   const pos = clampFull(bounds.x, bounds.y + (bounds.height - size), size, wa);
   petWindow.setBounds({ x: pos.x, y: pos.y, width: size, height: size });
   updateSettings({ pet: { ...getSettings().pet, sizePct: p, x: pos.x, y: pos.y } });
+  syncWalkCache();
 }
 
 function savePetPosition() {
@@ -216,6 +235,7 @@ function showPet() {
   walk.resumeAt = Date.now() + 800;
   if (petWindow) {
     ensureOnScreen();
+    syncWalkCache();
     petWindow.show();
   }
 }
