@@ -1,0 +1,59 @@
+/* BoardPet 面板共享主题：暗色篮球风 */
+:root {
+  --bg: #101418;
+  --card: #1a2028;
+  --card2: #222a34;
+  --line: #2c3642;
+  --text: #e8ecf1;
+  --dim: #8b98a5;
+  --accent: #e8590c;
+  --accent2: #ff8c42;
+  --star: #ffc72c;
+  --win: #51cf66;
+  --loss: #ff6b6b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Microsoft YaHei UI", "PingFang SC", sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+}
+.titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+}
+.titlebar .logo { width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ff8c42, #e8590c 70%); flex-shrink: 0; }
+.titlebar h1 { font-size: 14px; font-weight: 700; flex: 1; }
+.titlebar .close {
+  -webkit-app-region: no-drag;
+  width: 24px; height: 24px; border: none; border-radius: 6px;
+  background: transparent; color: var(--dim); font-size: 14px; cursor: pointer;
+}
+.titlebar .close:hover { background: var(--card2); color: var(--text); }
+.btn {
+  border: 1px solid var(--line); background: var(--card2); color: var(--text);
+  border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 12px;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.btn.primary:hover { background: var(--accent2); color: #fff; }
+.empty { text-align: center; color: var(--dim); padding: 40px 20px; line-height: 1.8; }
+.error-box { text-align: center; color: var(--dim); padding: 40px 20px; line-height: 2; }
+.spin {
+  width: 28px; height: 28px; margin: 0 auto 10px;
+  border: 3px solid var(--line); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }

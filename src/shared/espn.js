@@ -24,22 +24,42 @@ const STATUS = {
 
 const IN_PLAY = new Set([STATUS.IN_PROGRESS, STATUS.HALFTIME, STATUS.END_OF_PERIOD, STATUS.FIRST_HALF, STATUS.SECOND_HALF]);
 
-// boxscore 表头（ESPN labels）→ 归一化字段
+// boxscore 列：优先用 ESPN 机器名 keys（稳定），labels 仅作兜底
+const BOX_KEYS = {
+  minutes: 'min',
+  points: 'pts',
+  'fieldGoalsMade-fieldGoalsAttempted': 'fg',
+  'threePointFieldGoalsMade-threePointFieldGoalsAttempted': 'tp',
+  'freeThrowsMade-freeThrowsAttempted': 'ft',
+  rebounds: 'reb',
+  assists: 'ast',
+  turnovers: 'to',
+  steals: 'stl',
+  blocks: 'blk',
+  offensiveRebounds: 'oreb',
+  defensiveRebounds: 'dreb',
+  fouls: 'pf',
+  plusMinus: 'pm',
+};
+
 const BOX_LABELS = {
   MIN: 'min',
+  PTS: 'pts',
+  FG: 'fg',
   'FGM-A': 'fg',
+  '3PT': 'tp',
   '3PM-A': 'tp',
+  FT: 'ft',
   'FTM-A': 'ft',
-  OREB: 'oreb',
-  DREB: 'dreb',
   REB: 'reb',
   AST: 'ast',
+  TO: 'to',
   STL: 'stl',
   BLK: 'blk',
-  TO: 'to',
+  OREB: 'oreb',
+  DREB: 'dreb',
   PF: 'pf',
-  PTS: 'pts',
   '+/-': 'pm',
 };
 
-module.exports = { BASE, ENDPOINTS, STATE, STATUS, IN_PLAY, BOX_LABELS };
+module.exports = { BASE, ENDPOINTS, STATE, STATUS, IN_PLAY, BOX_KEYS, BOX_LABELS };

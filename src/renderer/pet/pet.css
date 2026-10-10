@@ -53,4 +53,6 @@ body.dragging { cursor: grabbing; }
 /* ---------- 朝向 ---------- */
 .rig { transform-origin: 100px 100px; }
 .flip .rig { transform: scaleX(-1); }
+/* 反向镜像球衣文字，保证号码/名字始终可读 */
+.flip .rig text { transform: scaleX(-1); transform-box: fill-box; transform-origin: center; }
 .flip.anim-sad .head { transform-origin: 100px 86px; }

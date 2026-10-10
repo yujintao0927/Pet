@@ -51,9 +51,12 @@ test('parseSummary：boxscore 按表头归一化', () => {
   assert.equal(lebron.reb, '7');
   assert.equal(lebron.ast, '9');
   assert.equal(lebron.fg, '7-14');
+  assert.equal(lebron.tp, '1-3');
+  assert.equal(lebron.ft, '6-8');
   assert.equal(lebron.pm, '+2');
   assert.equal(away.players[0].pts, '23');
   assert.equal(home.totals.pts, '50');
+  assert.equal(header.dateUtc, '2026-10-10T19:00:00Z');
   // didNotPlay 球员被过滤
   assert.ok(!away.players.some((p) => p.name === 'Mitchell Robinson'));
 });

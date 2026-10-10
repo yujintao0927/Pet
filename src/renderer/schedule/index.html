@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src https:; style-src 'self'" />
+  <link rel="stylesheet" href="../common.css" />
+  <link rel="stylesheet" href="schedule.css" />
+</head>
+<body>
+  <div class="titlebar">
+    <div class="logo"></div>
+    <h1>NBA 赛程</h1>
+    <button class="close" id="btn-close">✕</button>
+  </div>
+  <div class="date-nav">
+    <button class="btn" id="prev-day">‹</button>
+    <span id="date-label">今天</span>
+    <button class="btn" id="next-day">›</button>
+    <button class="btn" id="back-today" style="margin-left:auto">回到今天</button>
+  </div>
+  <div class="games" id="games">
+    <div class="empty"><div class="spin"></div>加载中…</div>
+  </div>
+  <div class="footer">
+    <span id="watch-hint">⭐ 星标关注 · 已关注球队自动标亮</span>
+    <button class="btn" id="btn-settings">设置</button>
+  </div>
+  <script src="schedule.js"></script>
+</body>
+</html>

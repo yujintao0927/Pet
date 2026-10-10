@@ -4,10 +4,11 @@ const path = require('path');
 const { getSettings, updateSettings } = require('./settingsStore');
 
 const PET_BASE = 200; // 100% 时的基准尺寸（px）
-const SIZE_MIN = 60;
-const SIZE_MAX = 250;
+const SIZE_MIN_PCT = 60;
+const SIZE_MAX_PCT = 250;
 
 let petWindow = null;
+let petSize = PET_BASE; // 当前窗口边长（DIP），走动时随 setBounds 强制写回，避免 DPI 缩放下尺寸漂移
 const walk = {
   enabled: true, dir: 1, walking: false,
   dragging: false, celebrating: false, hidden: false,
@@ -17,6 +18,7 @@ const walk = {
 function createPetWindow() {
   const settings = getSettings();
   const size = Math.round(PET_BASE * (settings.pet.sizePct / 100));
+  petSize = size;
   const wa = screen.getPrimaryDisplay().workArea;
   const pos = resolvePosition(settings, wa, size);
 
@@ -77,11 +79,10 @@ function walkTick() {
   }
   const wa = screen.getPrimaryDisplay().workArea;
   const [x, y] = petWindow.getPosition();
-  const [w] = petWindow.getSize();
   let nx = x + walk.dir;
   if (nx <= wa.x + 2 && walk.dir < 0) walk.dir = 1;
-  else if (nx + w >= wa.x + wa.width - 2 && walk.dir > 0) walk.dir = -1;
-  else { petWindow.setPosition(nx, y); return; }
+  else if (nx + petSize >= wa.x + wa.width - 2 && walk.dir > 0) walk.dir = -1;
+  else { petWindow.setBounds({ x: nx, y, width: petSize, height: petSize }); return; }
   sendPetCommand({ type: 'walk', dir: walk.dir });
 }
 
@@ -98,14 +99,16 @@ function movePet(dx, dy) {
 
 function resizePet(pct) {
   if (!petWindow) return;
-  const size = Math.min(SIZE_MAX, Math.max(SIZE_MIN, Math.round(PET_BASE * (pct / 100))));
+  const p = Math.min(SIZE_MAX_PCT, Math.max(SIZE_MIN_PCT, Math.round(pct)));
+  const size = Math.round(PET_BASE * (p / 100));
+  petSize = size;
   const bounds = petWindow.getBounds();
   const wa = screen.getPrimaryDisplay().workArea;
   // 锚定脚底：底边不动，且不出工作区
   let y = bounds.y + (bounds.height - size);
   y = Math.min(y, wa.y + wa.height - size);
   petWindow.setBounds({ x: bounds.x, y, width: size, height: size });
-  updateSettings({ pet: { ...getSettings().pet, sizePct: Math.round(pct), x: bounds.x, y } });
+  updateSettings({ pet: { ...getSettings().pet, sizePct: p, x: bounds.x, y } });
 }
 
 function savePetPosition() {

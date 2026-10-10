@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+  <link rel="stylesheet" href="../common.css" />
+  <link rel="stylesheet" href="settings.css" />
+</head>
+<body>
+  <div class="titlebar">
+    <div class="logo"></div>
+    <h1>BoardPet 设置</h1>
+    <button class="close" id="btn-close">✕</button>
+  </div>
+  <div class="settings-body">
+    <section>
+      <h2>球员形象</h2>
+      <div class="players" id="players"></div>
+      <div id="custom-box" class="custom-box hidden">
+        <div class="row"><label>名字</label><input id="c-name" maxlength="10" placeholder="PLAYER" /></div>
+        <div class="row"><label>号码</label><input id="c-number" maxlength="2" placeholder="00" /></div>
+      </div>
+    </section>
+    <section>
+      <h2>球衣配色</h2>
+      <div class="row">
+        <label>球队配色</label>
+        <select id="j-team"></select>
+      </div>
+      <div class="row">
+        <label>主色 / 副色</label>
+        <input type="color" id="j-primary" />
+        <input type="color" id="j-secondary" />
+      </div>
+    </section>
+    <section>
+      <h2>我的球队（自动关注其比赛）</h2>
+      <div class="teams" id="teams"></div>
+    </section>
+    <section>
+      <h2>大小</h2>
+      <div class="row slider-row">
+        <input type="range" id="size" min="60" max="250" step="5" />
+        <span id="size-label">100%</span>
+      </div>
+    </section>
+    <section>
+      <h2>行为与提醒</h2>
+      <div class="switches">
+        <label><input type="checkbox" id="sw-walk" /> 桌面走动</label>
+        <label><input type="checkbox" id="sw-top" /> 窗口置顶</label>
+        <label><input type="checkbox" id="sw-notify" /> 比赛系统通知（开赛 / 下半场 / 赛果）</label>
+        <label><input type="checkbox" id="sw-celebrate" /> 关键时刻庆祝动画</label>
+        <label><input type="checkbox" id="sw-auto" /> 开机自启</label>
+      </div>
+    </section>
+  </div>
+  <script src="../../shared/character.js"></script>
+  <script src="../../shared/presets.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

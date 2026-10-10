@@ -1,6 +1,6 @@
 'use strict';
 // ESPN 数据服务：抓取（UA/超时/重试）、缓存、解析（纯函数导出便于单测）
-const { ENDPOINTS, STATE, STATUS, IN_PLAY, BOX_LABELS } = require('../shared/espn');
+const { ENDPOINTS, STATE, STATUS, IN_PLAY, BOX_KEYS, BOX_LABELS } = require('../shared/espn');
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 BoardPet/0.1';
 
@@ -84,6 +84,7 @@ function parseSummary(raw) {
   const competitors = Array.isArray(comp.competitors) ? comp.competitors : [];
   const head = {
     id: String(header.id || ''),
+    dateUtc: comp.date || '',
     state: status.state || STATE.PRE,
     statusName: status.name || STATUS.SCHEDULED,
     inPlay: IN_PLAY.has(status.name) || status.state === STATE.IN,
@@ -97,22 +98,26 @@ function parseSummary(raw) {
   };
 
   const box = raw && raw.boxscore && Array.isArray(raw.boxscore.players) ? raw.boxscore.players : [];
+  // 列映射：优先 keys（机器名，稳定），否则退回 labels
+  const colMap = (stat) => {
+    const src = Array.isArray(stat.keys) && stat.keys.length ? stat.keys : (Array.isArray(stat.labels) ? stat.labels : []);
+    const table = Array.isArray(stat.keys) && stat.keys.length ? BOX_KEYS : BOX_LABELS;
+    return src.map((k) => table[k] || null);
+  };
   const sideOf = (entry, fallback) => {
     const stat = entry.statistics && entry.statistics[0] ? entry.statistics[0] : {};
-    const labels = Array.isArray(stat.labels) ? stat.labels : [];
+    const cols = colMap(stat);
     const players = (Array.isArray(stat.athletes) ? stat.athletes : [])
       .filter((a) => a && a.athlete && !a.didNotPlay && Array.isArray(a.stats))
       .map((a) => {
         const out = { name: a.athlete.displayName || a.athlete.shortName || '', jersey: a.athlete.jersey || '' };
-        labels.forEach((label, i) => {
-          const key = BOX_LABELS[label];
+        cols.forEach((key, i) => {
           if (key) out[key] = a.stats[i] == null || a.stats[i] === '' ? '—' : String(a.stats[i]);
         });
         return out;
       });
     const totalsRow = {};
-    labels.forEach((label, i) => {
-      const key = BOX_LABELS[label];
+    cols.forEach((key, i) => {
       if (key) totalsRow[key] = stat.totals ? String(stat.totals[i] ?? '—') : '—';
     });
     return {

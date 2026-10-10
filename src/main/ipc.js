@@ -2,17 +2,26 @@
 const { ipcMain, app, webContents } = require('electron');
 const { getSettings, updateSettings } = require('./settingsStore');
 const { movePet, resizePet, savePetPosition, setAlwaysOnTop, setWalkEnabled, setDragging } = require('./petWindow');
-const { openSchedulePanel, openSettings: openSettingsWindow } = require('./panelWindows');
+const { openSchedulePanel, openGameDetail, openSettings: openSettingsWindow } = require('./panelWindows');
+const { getScoreboard, getSummary, getTeams } = require('./dataService');
 
 function registerIpc() {
   ipcMain.handle('settings:get', () => getSettings());
 
   ipcMain.handle('settings:set', (_e, patch) => {
-    const s = updateSettings(patch);
+    updateSettings(patch);
     applySideEffects(patch);
+    const s = getSettings();
     for (const wc of webContents.getAllWebContents()) wc.send('events:settingsChanged', s);
     return s;
   });
+
+  ipcMain.handle('data:getScoreboard', (_e, date) => getScoreboard(date));
+  ipcMain.handle('data:getSummary', (_e, eventId) => getSummary(eventId));
+  ipcMain.handle('data:getTeams', () => getTeams());
+
+  ipcMain.on('panel:openGame', (_e, eventId) => openGameDetail(eventId));
+  ipcMain.on('panel:openSettings', () => openSettingsWindow());
 
   ipcMain.on('pet:move', (_e, dx, dy) => movePet(dx, dy));
   ipcMain.on('pet:resize', (_e, pct) => resizePet(pct));
@@ -30,6 +39,9 @@ function applySideEffects(patch) {
   if (patch.behavior) {
     if (typeof patch.behavior.alwaysOnTop === 'boolean') setAlwaysOnTop(patch.behavior.alwaysOnTop);
     if (typeof patch.behavior.walk === 'boolean') setWalkEnabled(patch.behavior.walk);
+  }
+  if (patch.pet && Number.isFinite(patch.pet.sizePct)) {
+    resizePet(patch.pet.sizePct);
   }
 }
 
