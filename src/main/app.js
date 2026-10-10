@@ -5,6 +5,7 @@ const { createPetWindow, getPetWindow, startWalkTicker } = require('./petWindow'
 const { createTray } = require('./tray');
 const { initSettings } = require('./settingsStore');
 const { registerIpc } = require('./ipc');
+const { startPolling } = require('./poller');
 
 const SMOKE = process.argv.includes('--smoke');
 
@@ -14,6 +15,7 @@ app.whenReady().then(async () => {
   createPetWindow();
   startWalkTicker();
   createTray();
+  if (!SMOKE) startPolling();
 
   if (SMOKE) {
     setTimeout(async () => {
