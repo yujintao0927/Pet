@@ -1,0 +1,16 @@
+{
+  "name": "boardpet",
+  "version": "0.1.0",
+  "description": "BoardPet 篮球主题桌面宠物 — NBA 实时赛程与比分",
+  "main": "src/main/app.js",
+  "author": "BoardPet",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "smoke": "electron . --smoke",
+    "test": "node --test tests/"
+  },
+  "devDependencies": {
+    "electron": "^39.8.10"
+  }
+}
