@@ -12,7 +12,7 @@ let petSize = PET_BASE; // 当前窗口边长（DIP），走动时随 setBounds 
 const walk = {
   enabled: true, dir: 1, walking: false,
   dragging: false, celebrating: false, hidden: false,
-  resumeAt: 0, nextPauseAt: Date.now() + 6000,
+  resumeAt: Date.now() + 8000, nextPauseAt: 0,
 };
 
 function createPetWindow() {
@@ -56,38 +56,57 @@ function sendPetCommand(cmd) {
 }
 
 // ---------- 走动引擎 ----------
-function walkTick() {
-  if (!petWindow || petWindow.isDestroyed()) return;
-  if (walk.dragging || walk.celebrating || walk.hidden || !walk.enabled) {
-    if (walk.walking) { walk.walking = false; sendPetCommand({ type: 'idle' }); }
-    return;
-  }
-  const now = Date.now();
+// 双层计时：调度器低频（决定何时走/停），移动器高频（仅走动时运行），空闲时几乎零开销
+let moveTimer = null;
+
+function startMoving() {
+  if (moveTimer) return;
+  walk.walking = true;
+  sendPetCommand({ type: 'walk', dir: walk.dir });
+  walk.nextPauseAt = Date.now() + 5000 + Math.random() * 7000; // 一次走 5~12 秒
+  moveTimer = setInterval(moveStep, 33);
+}
+
+function stopMoving(pauseMs) {
+  if (moveTimer) { clearInterval(moveTimer); moveTimer = null; }
   if (walk.walking) {
-    if (now >= walk.nextPauseAt) {
-      walk.walking = false;
-      walk.resumeAt = now + 1500 + Math.random() * 3500;
-      walk.nextPauseAt = now + 8000 + Math.random() * 9000;
-      if (Math.random() < 0.3) walk.dir *= -1;
-      sendPetCommand({ type: 'idle' });
-      return;
-    }
-  } else {
-    if (now < walk.resumeAt) return;
-    walk.walking = true;
-    sendPetCommand({ type: 'walk', dir: walk.dir });
+    walk.walking = false;
+    sendPetCommand({ type: 'idle' });
   }
+  walk.resumeAt = Date.now() + pauseMs;
+}
+
+function moveStep() {
+  if (!petWindow || petWindow.isDestroyed()) return;
   const wa = screen.getPrimaryDisplay().workArea;
   const [x, y] = petWindow.getPosition();
-  let nx = x + walk.dir;
+  let nx = x + walk.dir * 2;
   if (nx <= wa.x + 2 && walk.dir < 0) walk.dir = 1;
   else if (nx + petSize >= wa.x + wa.width - 2 && walk.dir > 0) walk.dir = -1;
   else { petWindow.setBounds({ x: nx, y, width: petSize, height: petSize }); return; }
   sendPetCommand({ type: 'walk', dir: walk.dir });
 }
 
+function walkTick() {
+  if (!petWindow || petWindow.isDestroyed()) return;
+  if (walk.dragging || walk.celebrating || walk.hidden || !walk.enabled) {
+    stopMoving(1500);
+    return;
+  }
+  const now = Date.now();
+  if (walk.walking) {
+    if (now >= walk.nextPauseAt) {
+      stopMoving(20000 + Math.random() * 40000); // 歇 20~60 秒再走，贴近真实桌宠节奏
+      if (Math.random() < 0.3) walk.dir *= -1;
+    }
+    return;
+  }
+  if (now < walk.resumeAt) return;
+  startMoving();
+}
+
 function startWalkTicker() {
-  setInterval(walkTick, 16);
+  setInterval(walkTick, 250);
 }
 
 // ---------- 交互 ----------
@@ -119,15 +138,12 @@ function savePetPosition() {
 
 function setDragging(on) {
   walk.dragging = on;
-  if (!on) {
-    walk.resumeAt = Date.now() + 2000;
-    sendPetCommand({ type: 'idle' });
-  }
+  stopMoving(2000);
 }
 
 function setWalkEnabled(on) {
   walk.enabled = on;
-  if (!on) walk.walking = false;
+  if (!on) stopMoving(0);
 }
 
 function celebrate(variant = 'celebrate') {
@@ -146,11 +162,13 @@ function setAlwaysOnTop(on) {
 
 function showPet() {
   walk.hidden = false;
+  walk.resumeAt = Date.now() + 800;
   if (petWindow) { petWindow.show(); }
 }
 
 function hidePet() {
   walk.hidden = true;
+  stopMoving(0);
   if (petWindow) petWindow.hide();
 }
 
