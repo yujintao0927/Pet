@@ -1,3 +1,56 @@
-html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; user-select: none; cursor: grab; }
-.pet-root { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
-.ball { width: 60%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ff8c42, #e8590c 70%); border: 2px solid #5c2e00; }
+html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; user-select: none; }
+body { cursor: grab; width: 100vw; height: 100vh; }
+body.dragging { cursor: grabbing; }
+#pet-root { width: 100vw; height: 100vh; }
+#pet { width: 100%; height: 100%; display: block; }
+
+/* ---------- 变换基准 ---------- */
+.rig, .arm, .leg, .head, .eyes, .body-wrap, .ball {
+  transform-box: view-box;
+}
+
+/* ---------- 待机：运球 ---------- */
+.arm-near { transform-origin: 130px 100px; animation: dribble-arm 0.9s ease-in-out infinite; }
+.arm-far  { transform-origin: 70px 100px; animation: sway-far 2.4s ease-in-out infinite; }
+.ball     { animation: ball-bounce 0.9s cubic-bezier(.45,0,.55,1) infinite; }
+.eyes     { transform-origin: 100px 63px; animation: blink 4.6s infinite; }
+.body-wrap{ transform-origin: 100px 150px; animation: breathe 2.6s ease-in-out infinite; }
+
+@keyframes dribble-arm { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(34deg); } }
+@keyframes ball-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(19px); } }
+@keyframes sway-far    { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-6deg); } }
+@keyframes breathe     { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1.5px); } }
+@keyframes blink       { 0%,95%,100% { transform: scaleY(1); } 97% { transform: scaleY(0.12); } }
+
+/* ---------- 走动 ---------- */
+.anim-walk .leg-l { transform-origin: 88px 160px; animation: leg-swing .5s ease-in-out infinite; }
+.anim-walk .leg-r { transform-origin: 112px 160px; animation: leg-swing .5s ease-in-out infinite reverse; }
+.anim-walk .body-wrap { animation: walk-bob .5s ease-in-out infinite; }
+@keyframes leg-swing { 0%,100% { transform: rotate(14deg); } 50% { transform: rotate(-14deg); } }
+@keyframes walk-bob  { 0%,100% { transform: translateY(0); } 25% { transform: translateY(-2.5px); } 50% { transform: translateY(0); } 75% { transform: translateY(-2.5px); } }
+
+/* ---------- 庆祝（欢呼） ---------- */
+.anim-celebrate .arm-near { transform-origin: 130px 100px; animation: arm-up-r .5s ease-in-out infinite alternate; }
+.anim-celebrate .arm-far  { transform-origin: 70px 100px;  animation: arm-up-l .5s ease-in-out infinite alternate; }
+.anim-celebrate .body-wrap{ animation: jump .55s ease-in-out infinite; }
+.anim-celebrate .ball, .anim-celebrate .shadow { opacity: 0; }
+@keyframes arm-up-r { from { transform: rotate(150deg); } to { transform: rotate(168deg); } }
+@keyframes arm-up-l { from { transform: rotate(-150deg); } to { transform: rotate(-168deg); } }
+@keyframes jump { 0%,100% { transform: translateY(0) scaleY(1); } 40% { transform: translateY(-16px) scaleY(1.04); } 70% { transform: translateY(0) scaleY(0.94); } }
+
+/* ---------- 轻反应（普通得分） ---------- */
+.anim-light .body-wrap { animation: light-hop .5s ease-in-out 2; }
+@keyframes light-hop { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+/* ---------- 沮丧（输球） ---------- */
+.anim-sad .head { transform-origin: 100px 86px; animation: head-down .8s ease-in-out forwards; }
+.anim-sad .arm-near { animation: none; transform: rotate(-24deg); }
+.anim-sad .arm-far  { animation: none; transform: rotate(24deg); }
+.anim-sad .ball, .anim-sad .shadow { opacity: 0; }
+.anim-sad .body-wrap { animation: none; }
+@keyframes head-down { to { transform: rotate(14deg); } }
+
+/* ---------- 朝向 ---------- */
+.rig { transform-origin: 100px 100px; }
+.flip .rig { transform: scaleX(-1); }
+.flip.anim-sad .head { transform-origin: 100px 86px; }

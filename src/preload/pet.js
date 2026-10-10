@@ -7,10 +7,12 @@ contextBridge.exposeInMainWorld('boardpet', {
   movePet: (dx, dy) => ipcRenderer.send('pet:move', dx, dy),
   resizePet: (pct) => ipcRenderer.send('pet:resize', pct),
   savePosition: () => ipcRenderer.send('pet:savePosition'),
+  dragStart: () => ipcRenderer.send('pet:dragStart'),
+  dragStop: () => ipcRenderer.send('pet:dragStop'),
   openPanel: () => ipcRenderer.send('pet:openPanel'),
   openSettings: () => ipcRenderer.send('pet:openSettings'),
   on: (channel, cb) => {
-    const allowed = ['events:celebrate', 'events:petCommand'];
+    const allowed = ['events:celebrate', 'events:petCommand', 'events:settingsChanged'];
     if (allowed.includes(channel)) ipcRenderer.on(channel, (_e, payload) => cb(payload));
   },
 });

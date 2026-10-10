@@ -2,12 +2,13 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
   <link rel="stylesheet" href="pet.css" />
 </head>
 <body>
-  <div id="pet-root" class="pet-root">
-    <div class="ball"></div>
-  </div>
+  <div id="pet-root" class="pet-root"></div>
+  <script src="character.js"></script>
+  <script src="../../shared/presets.js"></script>
   <script src="pet.js"></script>
 </body>
 </html>
