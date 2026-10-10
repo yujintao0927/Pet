@@ -6,6 +6,7 @@ let settings = null;
 let baseState = 'idle'; // idle | walk
 let facing = 1; // 1 右 -1 左
 let tempKind = null; // celebrate | light | sad | null
+let drag = null; // 拖拽会话（模块级，便于在命令/失焦时清理）
 
 window.addEventListener('DOMContentLoaded', async () => {
   settings = await window.boardpet.getSettings();
@@ -28,7 +29,7 @@ function handleCommand(cmd) {
     case 'idle': baseState = 'idle'; break;
     case 'face': facing = cmd.dir ?? facing; break;
     case 'dragStart': baseState = 'idle'; tempKind = null; break;
-    case 'dragStop': break;
+    case 'dragStop': drag = null; document.body.classList.remove('dragging'); break;
     case 'celebrate': case 'light': case 'sad': startTemp(cmd.type); return;
     default: return;
   }
@@ -50,15 +51,18 @@ function applyState() {
 
 function bindInput() {
   const root = document.getElementById('pet-root');
-  let drag = null;
 
-  root.addEventListener('mousedown', (e) => {
+  // 用 Pointer Events + 指针捕获：鼠标拖到宠物窗口之外也能收到结束事件，
+  // 避免"拖拽中"状态永久残留导致走动卡死。
+  root.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
-    drag = { sx: e.screenX, sy: e.screenY, moved: false };
+    drag = { sx: e.screenX, sy: e.screenY, moved: false, id: e.pointerId };
     document.body.classList.add('dragging');
+    try { root.setPointerCapture(e.pointerId); } catch { /* 捕获失败不影响基本拖拽 */ }
     window.boardpet.dragStart();
   });
-  window.addEventListener('mousemove', (e) => {
+
+  root.addEventListener('pointermove', (e) => {
     if (!drag) return;
     const dx = e.screenX - drag.sx;
     const dy = e.screenY - drag.sy;
@@ -68,13 +72,26 @@ function bindInput() {
     drag.sy = e.screenY;
     window.boardpet.movePet(Math.round(dx), Math.round(dy));
   });
-  window.addEventListener('mouseup', () => {
+
+  const endDrag = (allowClick) => {
     if (!drag) return;
+    const { moved, id } = drag;
+    drag = null;
+    document.body.classList.remove('dragging');
+    try { root.releasePointerCapture(id); } catch { /* 已释放 */ }
+    window.boardpet.dragStop();
+    if (!moved && allowClick) window.boardpet.openPanel();
+    else if (moved) window.boardpet.savePosition();
+  };
+  root.addEventListener('pointerup', () => endDrag(true));
+  root.addEventListener('pointercancel', () => endDrag(false));
+
+  // 兜底：窗口失焦时（例如被其他窗口抢走）清理拖拽态
+  window.addEventListener('blur', () => {
+    if (!drag) return;
+    drag = null;
     document.body.classList.remove('dragging');
     window.boardpet.dragStop();
-    if (!drag.moved) window.boardpet.openPanel();
-    else window.boardpet.savePosition();
-    drag = null;
   });
 
   window.addEventListener('wheel', (e) => {

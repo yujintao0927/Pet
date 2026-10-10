@@ -12,7 +12,7 @@ let petSize = PET_BASE; // 当前窗口边长（DIP），走动时随 setBounds 
 const walk = {
   enabled: true, dir: 1, walking: false,
   dragging: false, celebrating: false, hidden: false,
-  resumeAt: Date.now() + 8000, nextPauseAt: 0,
+  resumeAt: Date.now() + 8000, nextPauseAt: 0, lastDragAt: 0,
 };
 
 function createPetWindow() {
@@ -102,7 +102,7 @@ function startMoving() {
   if (moveTimer) return;
   walk.walking = true;
   sendPetCommand({ type: 'walk', dir: walk.dir });
-  walk.nextPauseAt = Date.now() + 5000 + Math.random() * 7000; // 一次走 5~12 秒
+  walk.nextPauseAt = Date.now() + 15000 + Math.random() * 20000; // 一次走 15~35 秒
   moveTimer = setInterval(moveStep, 33);
 }
 
@@ -119,15 +119,22 @@ function moveStep() {
   if (!petWindow || petWindow.isDestroyed()) return;
   const wa = screen.getPrimaryDisplay().workArea;
   const [x, y] = petWindow.getPosition();
-  let nx = x + walk.dir * 2;
+  let nx = x + walk.dir * 3; // ≈91px/s（33ms 一跳）
   if (nx <= wa.x + 2 && walk.dir < 0) walk.dir = 1;
   else if (nx + petSize >= wa.x + wa.width - 2 && walk.dir > 0) walk.dir = -1;
   else { petWindow.setBounds({ x: nx, y, width: petSize, height: petSize }); return; }
   sendPetCommand({ type: 'walk', dir: walk.dir });
 }
 
+const DRAG_WATCHDOG_MS = 8000;
+
 function walkTick() {
   if (!petWindow || petWindow.isDestroyed()) return;
+  // 看门狗：拖拽态长时间无 move 活动（渲染层丢了 pointerup 等），强制解除，避免走动永久卡死
+  if (walk.dragging && Date.now() - walk.lastDragAt > DRAG_WATCHDOG_MS) {
+    walk.dragging = false;
+    sendPetCommand({ type: 'dragStop' });
+  }
   if (walk.dragging || walk.celebrating || walk.hidden || !walk.enabled) {
     stopMoving(1500);
     return;
@@ -135,7 +142,7 @@ function walkTick() {
   const now = Date.now();
   if (walk.walking) {
     if (now >= walk.nextPauseAt) {
-      stopMoving(20000 + Math.random() * 40000); // 歇 20~60 秒再走，贴近真实桌宠节奏
+      stopMoving(2500 + Math.random() * 2500); // 只歇 2.5~5 秒，保持"一直在溜达"的观感
       if (Math.random() < 0.3) walk.dir *= -1;
     }
     return;
@@ -151,6 +158,7 @@ function startWalkTicker() {
 // ---------- 交互 ----------
 function movePet(dx, dy) {
   if (!petWindow) return;
+  walk.lastDragAt = Date.now(); // 拖拽看门狗的心跳
   const wa = screen.getPrimaryDisplay().workArea;
   const [x, y] = petWindow.getPosition();
   // 拖拽允许部分悬出屏幕，但必须保留 40px 可见，防止拖丢
@@ -180,6 +188,7 @@ function savePetPosition() {
 
 function setDragging(on) {
   walk.dragging = on;
+  walk.lastDragAt = Date.now();
   stopMoving(2000);
 }
 
