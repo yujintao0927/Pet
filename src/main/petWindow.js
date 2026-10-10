@@ -20,7 +20,11 @@ function createPetWindow() {
   const size = Math.round(PET_BASE * (settings.pet.sizePct / 100));
   petSize = size;
   const wa = screen.getPrimaryDisplay().workArea;
-  const pos = resolvePosition(settings, wa, size);
+  const { pos, healed } = resolvePosition(settings, wa, size);
+  if (healed) {
+    // 位置越界自愈：把修正后的位置立刻写回，避免每次启动重复纠正
+    updateSettings({ pet: { ...settings.pet, x: pos.x, y: pos.y } });
+  }
 
   petWindow = new BrowserWindow({
     x: pos.x,
@@ -44,11 +48,46 @@ function createPetWindow() {
   return petWindow;
 }
 
-function resolvePosition(settings, wa, size) {
-  if (Number.isFinite(settings.pet.x) && Number.isFinite(settings.pet.y)) {
-    return { x: Math.round(settings.pet.x), y: Math.round(settings.pet.y) };
-  }
+// 至少露出 m 像素才算「够得着」；越界（换分辨率/换显示器/历史坏数据）一律拉回工作区
+const REACH_MARGIN = 40;
+
+function isReachable(x, y, size, wa) {
+  return x + REACH_MARGIN <= wa.x + wa.width && x + size - REACH_MARGIN >= wa.x
+    && y + REACH_MARGIN <= wa.y + wa.height && y + size - REACH_MARGIN >= wa.y;
+}
+
+function clampFull(x, y, size, wa) {
+  return {
+    x: Math.min(Math.max(Math.round(x), wa.x), Math.max(wa.x, wa.x + wa.width - size)),
+    y: Math.min(Math.max(Math.round(y), wa.y), Math.max(wa.y, wa.y + wa.height - size)),
+  };
+}
+
+function defaultPosition(wa, size) {
   return { x: wa.x + wa.width - size - 120, y: wa.y + wa.height - size - 2 };
+}
+
+function resolvePosition(settings, wa, size) {
+  const { x, y } = settings.pet;
+  if (Number.isFinite(x) && Number.isFinite(y) && isReachable(x, y, size, wa)) {
+    return { pos: clampFull(x, y, size, wa), healed: false };
+  }
+  if (Number.isFinite(x) && Number.isFinite(y)) {
+    console.warn(`[pet] saved position (${x},${y}) is off-screen, resetting to default`);
+  }
+  return { pos: clampFull(defaultPosition(wa, size).x, defaultPosition(wa, size).y, size, wa), healed: true };
+}
+
+// 兜底：任何时刻发现窗口不可达就拉回工作区（托盘"显示宠物"、二次启动聚焦时调用）
+function ensureOnScreen() {
+  if (!petWindow || petWindow.isDestroyed()) return;
+  const wa = screen.getPrimaryDisplay().workArea;
+  const b = petWindow.getBounds();
+  if (!isReachable(b.x, b.y, Math.max(b.width, petSize), wa)) {
+    const p = clampFull(defaultPosition(wa, petSize).x, defaultPosition(wa, petSize).y, petSize, wa);
+    petWindow.setBounds({ x: p.x, y: p.y, width: petSize, height: petSize });
+    updateSettings({ pet: { ...getSettings().pet, x: p.x, y: p.y } });
+  }
 }
 
 function sendPetCommand(cmd) {
@@ -112,8 +151,12 @@ function startWalkTicker() {
 // ---------- 交互 ----------
 function movePet(dx, dy) {
   if (!petWindow) return;
+  const wa = screen.getPrimaryDisplay().workArea;
   const [x, y] = petWindow.getPosition();
-  petWindow.setPosition(x + dx, y + dy);
+  // 拖拽允许部分悬出屏幕，但必须保留 40px 可见，防止拖丢
+  const nx = Math.min(Math.max(x + dx, wa.x - petSize + REACH_MARGIN), wa.x + wa.width - REACH_MARGIN);
+  const ny = Math.min(Math.max(y + dy, wa.y - petSize + REACH_MARGIN), wa.y + wa.height - REACH_MARGIN);
+  petWindow.setPosition(nx, ny);
 }
 
 function resizePet(pct) {
@@ -123,11 +166,10 @@ function resizePet(pct) {
   petSize = size;
   const bounds = petWindow.getBounds();
   const wa = screen.getPrimaryDisplay().workArea;
-  // 锚定脚底：底边不动，且不出工作区
-  let y = bounds.y + (bounds.height - size);
-  y = Math.min(y, wa.y + wa.height - size);
-  petWindow.setBounds({ x: bounds.x, y, width: size, height: size });
-  updateSettings({ pet: { ...getSettings().pet, sizePct: p, x: bounds.x, y } });
+  // 锚定脚底：底边不动；再整体钳回工作区（换尺寸/坏数据/越界一律兜住）
+  const pos = clampFull(bounds.x, bounds.y + (bounds.height - size), size, wa);
+  petWindow.setBounds({ x: pos.x, y: pos.y, width: size, height: size });
+  updateSettings({ pet: { ...getSettings().pet, sizePct: p, x: pos.x, y: pos.y } });
 }
 
 function savePetPosition() {
@@ -163,7 +205,10 @@ function setAlwaysOnTop(on) {
 function showPet() {
   walk.hidden = false;
   walk.resumeAt = Date.now() + 800;
-  if (petWindow) { petWindow.show(); }
+  if (petWindow) {
+    ensureOnScreen();
+    petWindow.show();
+  }
 }
 
 function hidePet() {
@@ -179,5 +224,5 @@ function getPetWindow() {
 module.exports = {
   createPetWindow, getPetWindow, movePet, resizePet, savePetPosition,
   setAlwaysOnTop, showPet, hidePet, setDragging, setWalkEnabled,
-  celebrate, startWalkTicker, sendPetCommand, PET_BASE,
+  celebrate, startWalkTicker, sendPetCommand, ensureOnScreen, PET_BASE,
 };

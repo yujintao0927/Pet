@@ -11,13 +11,16 @@ const { startPolling } = require('./poller');
 const SMOKE = process.argv.includes('--smoke');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// 冒烟测试使用隔离的配置目录，绝不触碰用户真实 settings.json
+if (SMOKE) app.setPath('userData', path.join(app.getPath('temp'), 'boardpet-smoke'));
+
 // 单实例：重复启动时聚焦已有宠物，避免出现多只桌宠
 if (!SMOKE && !app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    const win = getPetWindow();
-    if (win && !win.isDestroyed()) { win.show(); win.focus(); }
+    const { showPet } = require('./petWindow');
+    showPet();
   });
 }
 
@@ -100,6 +103,13 @@ app.whenReady().then(async () => {
       await sleep(500);
       console.log('AFTER WHEEL WIDTH (expect ~330):', getPetWindow().getBounds().width);
 
+      // 回归断言：缩放后窗口必须完整留在工作区内（防位置越界隐身）
+      const { screen: scr } = require('electron');
+      const wa = scr.getPrimaryDisplay().workArea;
+      const bb = getPetWindow().getBounds();
+      const inArea = bb.x >= wa.x && bb.y >= wa.y && bb.x + bb.width <= wa.x + wa.width + 1 && bb.y + bb.height <= wa.y + wa.height + 1;
+      console.log('IN WORKAREA AFTER RESIZE:', inArea, JSON.stringify(bb), JSON.stringify({ waX: wa.x, waY: wa.y, waW: wa.width, waH: wa.height }));
+
       // F12 星标关注：点星 → 设置写入 → 再点取消
       await sp.webContents.executeJavaScript("document.querySelector('.game-card .star-btn').click(); 'ok'");
       await sleep(600);
@@ -119,9 +129,7 @@ app.whenReady().then(async () => {
       await capture(sp, 'offline');
       setFailMode(false);
 
-      // 还原默认设置，避免污染用户配置
-      const { updateSettings } = require('./settingsStore');
-      updateSettings({ pet: { player: 'lebron', jersey: { primary: '#ED174C', secondary: '#006BB6' }, sizePct: 100 }, watch: { teamIds: ['PHI'], starredEvents: [], mutedEvents: [] } });
+      // 冒烟使用隔离配置目录，无需还原用户设置
       app.exit(0);
     }, 2000);
   }
