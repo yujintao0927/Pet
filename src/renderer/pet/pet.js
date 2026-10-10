@@ -94,15 +94,7 @@ function bindInput() {
     window.boardpet.dragStop();
   });
 
-  window.addEventListener('wheel', (e) => {
-    if (!settings) return;
-    const cur = settings.pet.sizePct || 100;
-    const next = Math.min(250, Math.max(60, cur + (e.deltaY < 0 ? 5 : -5)));
-    if (next !== cur) {
-      settings.pet.sizePct = next;
-      window.boardpet.resizePet(next);
-    }
-  }, { passive: true });
+  // 注：v0.1 的滚轮缩放已按用户要求取消；调整大小走设置面板滑杆（settings → petWindow.resizePet）
 
   window.addEventListener('contextmenu', (e) => {
     e.preventDefault();
