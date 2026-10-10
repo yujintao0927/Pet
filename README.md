@@ -19,7 +19,20 @@ npm run smoke    # 冒烟测试：启动 2.5 秒后自动退出
 ## 打包绿色版
 
 ```bash
-npx electron-builder --win portable   # 产物在 release/
+# 首次安装依赖若下载 Electron 失败，先设置镜像：
+#   set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
+node scripts/gen-icon.js          # 生成 assets/icon.ico / tray.png
+ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ \
+  npx electron-packager . BoardPet --platform=win32 --arch=x64 \
+  --icon=assets/icon.ico --out=release --overwrite --prune=true \
+  --ignore="^/(release|docs|tests|scripts|smoke|\.git)"
+# 产物：release/BoardPet-win32-x64/BoardPet.exe（免安装，整个文件夹拷贝即用）
+```
+
+## 冒烟测试（自动截图验收）
+
+```bash
+npm run smoke   # 启动后依次截取 宠物/赛程/详情/设置 各窗口到系统临时目录并打印日志
 ```
 
 ## 文档

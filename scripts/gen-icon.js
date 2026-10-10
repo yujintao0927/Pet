@@ -67,4 +67,32 @@ const dir = path.join(__dirname, '..', 'assets');
 fs.mkdirSync(dir, { recursive: true });
 fs.writeFileSync(path.join(dir, 'tray.png'), makeBasketball(32));
 fs.writeFileSync(path.join(dir, 'icon.png'), makeBasketball(256));
+
+// ICO（嵌入 PNG 条目，Windows Vista+ 支持）：256 + 32 双尺寸
+function makeIco(images) {
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(0, 0);
+  header.writeUInt16LE(1, 2);
+  header.writeUInt16LE(images.length, 4);
+  const entries = [];
+  let offset = 6 + 16 * images.length;
+  for (const { size, png } of images) {
+    const e = Buffer.alloc(16);
+    e[0] = size >= 256 ? 0 : size;
+    e[1] = size >= 256 ? 0 : size;
+    e[2] = 0;
+    e[3] = 0;
+    e.writeUInt16LE(1, 4);
+    e.writeUInt16LE(32, 6);
+    e.writeUInt32LE(png.length, 8);
+    e.writeUInt32LE(offset, 12);
+    offset += png.length;
+    entries.push(e);
+  }
+  return Buffer.concat([header, ...entries, ...images.map((i) => i.png)]);
+}
+fs.writeFileSync(path.join(dir, 'icon.ico'), makeIco([
+  { size: 256, png: makeBasketball(256) },
+  { size: 32, png: makeBasketball(32) },
+]));
 console.log('icons generated');

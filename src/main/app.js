@@ -11,11 +11,22 @@ const { startPolling } = require('./poller');
 const SMOKE = process.argv.includes('--smoke');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// 单实例：重复启动时聚焦已有宠物，避免出现多只桌宠
+if (!SMOKE && !app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    const win = getPetWindow();
+    if (win && !win.isDestroyed()) { win.show(); win.focus(); }
+  });
+}
+
 async function capture(win, name) {
   try {
     const img = await win.webContents.capturePage();
-    fs.writeFileSync(path.join(__dirname, '..', '..', `smoke-${name}.png`), img.toPNG());
-    console.log(`captured ${name}`);
+    const file = path.join(app.getPath('temp'), `boardpet-${name}.png`);
+    fs.writeFileSync(file, img.toPNG());
+    console.log(`captured ${name} -> ${file}`);
   } catch (e) {
     console.error(`capture ${name} failed:`, e.message);
   }
@@ -60,6 +71,17 @@ app.whenReady().then(async () => {
       await sleep(1200);
       const petName = await win.webContents.executeJavaScript("document.querySelector('#pet text')?.textContent");
       console.log('PET NAME AFTER SWITCH:', petName);
+
+      // 动画运行验证：间隔取两帧，字节不同说明动画在跑
+      const { celebrate } = require('./petWindow');
+      celebrate('celebrate');
+      await sleep(300);
+      const f1 = (await win.webContents.capturePage()).toPNG();
+      await sleep(400);
+      const f2 = (await win.webContents.capturePage()).toPNG();
+      console.log('CELEBRATE ANIMATING:', !f1.equals(f2));
+      fs.writeFileSync(path.join(app.getPath('temp'), 'boardpet-celebrate.png'), f1);
+      await sleep(2500);
       await capture(win, 'pet-curry');
       b('after-curry');
 
