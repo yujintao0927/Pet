@@ -3,22 +3,39 @@ const { ipcMain, app, webContents } = require('electron');
 const { getSettings, updateSettings } = require('./settingsStore');
 const { movePet, resizePet, savePetPosition, setAlwaysOnTop, setWalkEnabled, setDragging } = require('./petWindow');
 const { openSchedulePanel, openGameDetail, openSettings: openSettingsWindow } = require('./panelWindows');
-const { getScoreboard, getSummary, getTeams } = require('./dataService');
+const { getScoreboard, getSummary, getTeams, prefetchSummaries, onUpdate } = require('./dataService');
+
+function broadcast(channel, payload) {
+  for (const wc of webContents.getAllWebContents()) {
+    if (!wc.isDestroyed()) wc.send(channel, payload);
+  }
+}
 
 function registerIpc() {
+  // 数据层刷新成功 → 推送 UI（面板/详情窗无需自己轮询等待）
+  onUpdate((evt) => {
+    if (evt.kind === 'scoreboard') broadcast('events:gameUpdate', { events: evt.data.events });
+    else if (evt.kind === 'summary') broadcast('events:gameDetail', { eventId: evt.eventId, data: evt.data });
+  });
+
   ipcMain.handle('settings:get', () => getSettings());
 
   ipcMain.handle('settings:set', (_e, patch) => {
     updateSettings(patch);
     applySideEffects(patch);
     const s = getSettings();
-    for (const wc of webContents.getAllWebContents()) wc.send('events:settingsChanged', s);
+    broadcast('events:settingsChanged', s);
     return s;
   });
 
   ipcMain.handle('data:getScoreboard', (_e, date) => getScoreboard(date));
   ipcMain.handle('data:getSummary', (_e, eventId) => getSummary(eventId));
   ipcMain.handle('data:getTeams', () => getTeams());
+  // 悬停预取：不阻塞调用方，失败静默
+  ipcMain.handle('data:prefetchSummary', (_e, eventId) => {
+    prefetchSummaries([eventId]).catch(() => {});
+    return true;
+  });
 
   ipcMain.on('panel:openGame', (_e, eventId) => openGameDetail(eventId));
   ipcMain.on('panel:openSettings', () => openSettingsWindow());

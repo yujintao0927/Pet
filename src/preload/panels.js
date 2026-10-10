@@ -9,8 +9,9 @@ contextBridge.exposeInMainWorld('boardpet', {
   setSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   openGame: (eventId) => ipcRenderer.send('panel:openGame', eventId),
   openSettings: () => ipcRenderer.send('panel:openSettings'),
+  prefetchSummary: (eventId) => ipcRenderer.invoke('data:prefetchSummary', eventId),
   on: (channel, cb) => {
-    const allowed = ['events:gameUpdate', 'events:settingsChanged'];
+    const allowed = ['events:gameUpdate', 'events:gameDetail', 'events:settingsChanged'];
     if (allowed.includes(channel)) ipcRenderer.on(channel, (_e, payload) => cb(payload));
   },
 });

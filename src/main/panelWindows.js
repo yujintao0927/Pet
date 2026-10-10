@@ -48,16 +48,26 @@ function baseOptions(width, height) {
   };
 }
 
+const SCHEDULE_SIZE = { width: 360, height: 520 };
+
 function openSchedulePanel() {
-  if (PANELS.schedule && !PANELS.schedule.isDestroyed()) {
-    PANELS.schedule.show();
-    PANELS.schedule.focus();
-    return PANELS.schedule;
-  }
-  PANELS.schedule = new BrowserWindow({ ...baseOptions(360, 520), title: 'NBA 赛程' });
-  PANELS.schedule.on('closed', () => { PANELS.schedule = null; });
-  PANELS.schedule.loadFile(page('schedule', 'index.html'));
-  return PANELS.schedule;
+  const win = warmSchedulePanel();
+  // 显示时按宠物当前位置重新定位（宠物可能已经走开）
+  const pos = positionNearPet(SCHEDULE_SIZE.width, SCHEDULE_SIZE.height);
+  win.setBounds({ x: pos.x, y: pos.y, ...SCHEDULE_SIZE });
+  win.show();
+  win.focus();
+  return win;
+}
+
+// 启动时预热：隐藏创建并加载页面，点击宠物时直接显示（省掉窗口创建+页面加载的等待）
+function warmSchedulePanel() {
+  if (PANELS.schedule && !PANELS.schedule.isDestroyed()) return PANELS.schedule;
+  const win = new BrowserWindow({ ...baseOptions(SCHEDULE_SIZE.width, SCHEDULE_SIZE.height), show: false, title: 'NBA 赛程' });
+  PANELS.schedule = win;
+  win.on('closed', () => { PANELS.schedule = null; });
+  win.loadFile(page('schedule', 'index.html'));
+  return win;
 }
 
 function openGameDetail(eventId) {
@@ -87,4 +97,4 @@ function openSettings() {
   return PANELS.settings;
 }
 
-module.exports = { openSchedulePanel, openGameDetail, openSettings };
+module.exports = { openSchedulePanel, warmSchedulePanel, openGameDetail, openSettings };

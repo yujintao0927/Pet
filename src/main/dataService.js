@@ -1,6 +1,7 @@
 'use strict';
 // ESPN 数据服务：抓取（UA/超时/重试）、缓存、解析（纯函数导出便于单测）
 const { ENDPOINTS, STATE, STATUS, IN_PLAY, BOX_KEYS, BOX_LABELS } = require('../shared/espn');
+const { EventEmitter } = require('events');
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 BoardPet/0.1';
 
@@ -150,35 +151,143 @@ function parseTeams(raw) {
   }));
 }
 
-// ---------- 缓存抓取层 ----------
+// ---------- 缓存抓取层（stale-while-revalidate）----------
+// 语义：命中且新鲜 → 直接返回；命中但过期 → 立即返回旧数据 + 后台静默刷新（刷新成功广播通知）；
+//      未命中 → 等待请求（仅冷启动首屏会发生）。
+// 缓存条目：{ at, data, final, inflight }
 
-async function getScoreboard(date = '') {
+const FRESHNESS = {
+  scoreboard: 300_000,      // 赛程 5 分钟（由轮询器每 45 秒强制刷新写穿，实际总是新鲜）
+  summaryLive: 15_000,      // 进行中比赛的球员数据 15 秒
+  summaryFinal: 3_600_000,  // 已结束比赛数据 1 小时（终场数据不再变化）
+};
+
+const MAX_PREFETCH = 8;
+const PREFETCH_CONCURRENCY = 3;
+
+function getScoreboard(date = '', opts = {}) {
   const key = date || 'today';
   const hit = scoreboardCache.get(key);
-  if (hit && Date.now() - hit.at < 45_000) return hit.data;
-  const data = parseScoreboard(await fetchJson(ENDPOINTS.scoreboard(date)));
-  scoreboardCache.set(key, { at: Date.now(), data });
-  return data;
+  const fresh = hit && hit.data && Date.now() - hit.at < FRESHNESS.scoreboard;
+  if (!opts.force && fresh) return Promise.resolve(hit.data);
+  if (!opts.force && hit && hit.data) {
+    // 过期：先给旧数据，后台刷新
+    refreshScoreboard(date).catch((e) => console.error('[swr] scoreboard refresh failed:', e.message));
+    return Promise.resolve(hit.data);
+  }
+  return refreshScoreboard(date);
 }
 
-async function getSummary(eventId) {
-  const hit = summaryCache.get(eventId);
-  const ttl = hit && hit.final ? 3600_000 : 20_000;
-  if (hit && Date.now() - hit.at < ttl) return hit.data;
-  const data = parseSummary(await fetchJson(ENDPOINTS.summary(eventId)));
-  summaryCache.set(eventId, { at: Date.now(), data, final: data.header.completed });
-  return data;
+// 强制刷新（轮询器专用：事件检测必须基于最新数据，不能被缓存短路）
+function refreshScoreboard(date = '') {
+  const key = date || 'today';
+  const existing = scoreboardCache.get(key);
+  if (existing && existing.inflight) return existing.inflight;
+  const inflight = fetchJson(ENDPOINTS.scoreboard(date))
+    .then((raw) => {
+      const data = parseScoreboard(raw);
+      scoreboardCache.set(key, { at: Date.now(), data, inflight: null });
+      emitUpdate({ kind: 'scoreboard', data });
+      return data;
+    })
+    .catch((err) => {
+      const cur = scoreboardCache.get(key) || {};
+      scoreboardCache.set(key, { ...cur, inflight: null });
+      throw err;
+    });
+  scoreboardCache.set(key, {
+    at: existing ? existing.at : 0,
+    data: existing ? existing.data : null,
+    inflight,
+  });
+  return inflight;
 }
 
-async function getTeams() {
-  if (teamsCache && Date.now() - teamsCache.at < 24 * 3600_000) return teamsCache.data;
-  const data = parseTeams(await fetchJson(ENDPOINTS.teams()));
-  teamsCache = { at: Date.now(), data };
-  return data;
+function getSummary(eventId, opts = {}) {
+  const key = String(eventId);
+  const hit = summaryCache.get(key);
+  if (!opts.force && hit && hit.data) {
+    const ttl = hit.final ? FRESHNESS.summaryFinal : FRESHNESS.summaryLive;
+    if (Date.now() - hit.at < ttl) return Promise.resolve(hit.data);
+    refreshSummary(key).catch((e) => console.error('[swr] summary refresh failed:', e.message));
+    return Promise.resolve(hit.data);
+  }
+  return refreshSummary(key);
+}
+
+function refreshSummary(eventId) {
+  const key = String(eventId);
+  const existing = summaryCache.get(key);
+  if (existing && existing.inflight) return existing.inflight;
+  const inflight = fetchJson(ENDPOINTS.summary(key))
+    .then((raw) => {
+      const data = parseSummary(raw);
+      summaryCache.set(key, { at: Date.now(), data, final: data.header.completed, inflight: null });
+      emitUpdate({ kind: 'summary', eventId: key, data });
+      return data;
+    })
+    .catch((err) => {
+      const cur = summaryCache.get(key) || {};
+      summaryCache.set(key, { ...cur, inflight: null });
+      throw err;
+    });
+  summaryCache.set(key, {
+    at: existing ? existing.at : 0,
+    data: existing ? existing.data : null,
+    final: existing ? existing.final : false,
+    inflight,
+  });
+  return inflight;
+}
+
+// 预取一批比赛的球员数据：并发受限、在途去重、单个失败不影响其它
+async function prefetchSummaries(eventIds) {
+  const ids = [...new Set((eventIds || []).map(String))].slice(0, MAX_PREFETCH);
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < ids.length) {
+      const id = ids[cursor++];
+      try {
+        await refreshSummary(id);
+      } catch (e) {
+        console.error(`[prefetch] summary ${id} failed:`, e.message);
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(PREFETCH_CONCURRENCY, ids.length) }, worker));
+}
+
+function getTeams() {
+  if (teamsCache && Date.now() - teamsCache.at < 24 * 3600_000) return Promise.resolve(teamsCache.data);
+  return fetchJson(ENDPOINTS.teams()).then((raw) => {
+    const data = parseTeams(raw);
+    teamsCache = { at: Date.now(), data };
+    return data;
+  });
 }
 
 function invalidateScoreboard(date = '') {
   scoreboardCache.delete(date || 'today');
 }
 
-module.exports = { parseScoreboard, parseSummary, parseTeams, getScoreboard, getSummary, getTeams, invalidateScoreboard, fetchJson, setFailMode };
+function clearCaches() {
+  scoreboardCache.clear();
+  summaryCache.clear();
+  teamsCache = null;
+}
+
+// 数据更新广播：缓存刷新成功后通知订阅者（用于推送 UI 更新）
+const bus = new EventEmitter();
+function onUpdate(cb) {
+  bus.on('update', cb);
+}
+function emitUpdate(evt) {
+  bus.emit('update', evt);
+}
+
+module.exports = {
+  parseScoreboard, parseSummary, parseTeams,
+  getScoreboard, refreshScoreboard, getSummary, refreshSummary, getTeams,
+  prefetchSummaries, invalidateScoreboard, clearCaches,
+  fetchJson, setFailMode, onUpdate, FRESHNESS,
+};

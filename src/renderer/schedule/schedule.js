@@ -106,6 +106,8 @@ function render() {
   }).join('');
 
   box.querySelectorAll('.game-card').forEach((card) => {
+    // 悬停即预取该场球员数据（点击时通常已就绪；在途请求会自动去重）
+    card.addEventListener('mouseenter', () => window.boardpet.prefetchSummary(card.dataset.id));
     card.addEventListener('click', (e) => {
       const act = e.target.dataset && e.target.dataset.act;
       const id = card.dataset.id;

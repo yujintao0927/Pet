@@ -1,8 +1,8 @@
 'use strict';
-// 关注轮询：每 45s 拉当日赛程 → 关注检测 → 通知 + 宠物反应 + 广播面板刷新
-const { webContents } = require('electron');
-const { getScoreboard } = require('./dataService');
-const { detect } = require('./watchDetector');
+// 关注轮询：每 45s 强制刷新赛程（不能被缓存短路）→ 关注检测 → 通知 + 宠物反应；
+// 并预取进行中/关注球队比赛的球员数据，使详情窗打开即用。
+const { refreshScoreboard, prefetchSummaries } = require('./dataService');
+const { detect, isWatched } = require('./watchDetector');
 const { getSettings } = require('./settingsStore');
 const { celebrate } = require('./petWindow');
 const { notifyGame } = require('./notifier');
@@ -14,14 +14,22 @@ async function pollOnce() {
   let events = [];
   try {
     const settings = getSettings();
-    const sb = await getScoreboard();
+    const sb = await refreshScoreboard();
     events = sb.events;
     const detections = detect(prev, events, settings.watch);
     for (const d of detections) dispatch(d, settings);
+    prefetchWatched(events, settings);
   } catch (e) {
     console.error('[poller]', e.message);
   }
-  for (const wc of webContents.getAllWebContents()) wc.send('events:gameUpdate', { events });
+}
+
+// 预取：进行中 + 关注球队当日的比赛
+function prefetchWatched(events, settings) {
+  const targets = events
+    .filter((ev) => ev.inPlay || isWatched(ev, settings.watch))
+    .map((ev) => ev.id);
+  if (targets.length) prefetchSummaries(targets);
 }
 
 function dispatch(d, settings) {
