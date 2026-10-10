@@ -8,7 +8,12 @@ const scoreboardCache = new Map(); // key(date|'today') -> {at, data}
 const summaryCache = new Map(); // eventId -> {at, data, final}
 let teamsCache = null;
 
+// 冒烟测试用故障注入：模拟断网，验证各面板容错 UI
+let failMode = false;
+function setFailMode(v) { failMode = !!v; }
+
 async function fetchJson(url, timeoutMs = 10000) {
+  if (failMode) throw new Error('simulated offline');
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -176,4 +181,4 @@ function invalidateScoreboard(date = '') {
   scoreboardCache.delete(date || 'today');
 }
 
-module.exports = { parseScoreboard, parseSummary, parseTeams, getScoreboard, getSummary, getTeams, invalidateScoreboard, fetchJson };
+module.exports = { parseScoreboard, parseSummary, parseTeams, getScoreboard, getSummary, getTeams, invalidateScoreboard, fetchJson, setFailMode };

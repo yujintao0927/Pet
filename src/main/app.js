@@ -95,9 +95,33 @@ app.whenReady().then(async () => {
       await sleep(400);
       await capture(win, 'pet-flip');
 
+      // F03 滚轮缩放（当前 160%，向上滚一档 +5% → 应为 330px；与真实滚轮走同一监听器）
+      await win.webContents.executeJavaScript("window.dispatchEvent(new WheelEvent('wheel', { deltaY: -120 })); 'ok'");
+      await sleep(500);
+      console.log('AFTER WHEEL WIDTH (expect ~330):', getPetWindow().getBounds().width);
+
+      // F12 星标关注：点星 → 设置写入 → 再点取消
+      await sp.webContents.executeJavaScript("document.querySelector('.game-card .star-btn').click(); 'ok'");
+      await sleep(600);
+      const { getSettings } = require('./settingsStore');
+      console.log('STARRED AFTER CLICK:', JSON.stringify(getSettings().watch.starredEvents));
+      await sp.webContents.executeJavaScript("document.querySelector('.game-card .star-btn').click(); 'ok'");
+      await sleep(400);
+
+      // F16 离线容错：注入故障 + 清缓存，面板应显示错误与重试
+      const { setFailMode, invalidateScoreboard } = require('./dataService');
+      setFailMode(true);
+      invalidateScoreboard();
+      await sp.webContents.executeJavaScript("load(); 'ok'");
+      await sleep(1200);
+      const offlineText = await sp.webContents.executeJavaScript("document.querySelector('.error-box')?.textContent || '(no error box)'");
+      console.log('OFFLINE UI:', offlineText.replace(/\s+/g, ' ').trim().slice(0, 24));
+      await capture(sp, 'offline');
+      setFailMode(false);
+
       // 还原默认设置，避免污染用户配置
       const { updateSettings } = require('./settingsStore');
-      updateSettings({ pet: { player: 'lebron', jersey: { primary: '#ED174C', secondary: '#006BB6' }, sizePct: 100 } });
+      updateSettings({ pet: { player: 'lebron', jersey: { primary: '#ED174C', secondary: '#006BB6' }, sizePct: 100 }, watch: { teamIds: ['PHI'], starredEvents: [], mutedEvents: [] } });
       app.exit(0);
     }, 2000);
   }
