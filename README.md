@@ -46,7 +46,8 @@ npm run smoke   # 启动后依次截取 宠物/赛程/详情/设置 各窗口到
 - docs/需求对齐单.md — 需求对齐结论（v0.1）
 - docs/需求对齐单-迭代2.md — 迭代2 对齐结论（提速/走动/缩放）
 - docs/01-调研报告.md … 07-复盘报告.md — 开发流程各阶段文档
-- docs/changes/ — 增量需求变更文档（迭代2）
+- docs/changes/ — 增量需求变更文档（`20261010-ux-optimize` 体验优化、`20261012-muyu` 敲球功德木鱼）
+- design/muyu-preview/ — 木鱼设计资产（音色 WAV、概念 SVG、可交互试听页 `preview.html`，双击即可玩）
 
 ## 分支策略
 
