@@ -7,6 +7,7 @@ let settings = null;
 window.addEventListener('DOMContentLoaded', async () => {
   settings = await window.boardpet.getSettings();
   document.getElementById('btn-close').onclick = () => window.close();
+  document.getElementById('btn-muyu').onclick = () => window.boardpet.openMuyu();
   renderPlayerCards();
   renderTeamSelect();
   renderTeamChips();

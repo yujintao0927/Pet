@@ -16,6 +16,7 @@ const DEFAULTS = {
   watch: { teamIds: ['PHI'], starredEvents: [], mutedEvents: [] },
   behavior: { walk: true, alwaysOnTop: true, notify: true, celebrate: true },
   app: { autoLaunch: false },
+  muyu: { count: 0 },
 };
 
 let filePath = null;

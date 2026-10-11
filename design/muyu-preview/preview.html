@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>篮球木鱼 · 动态与声音试听稿</title>
+<style>
+  body{background:#14181d;color:#f0e6d2;font-family:"KaiTi","STKaiti","楷体",serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;margin:0;user-select:none;-webkit-user-select:none}
+  h1{font-size:24px;margin:18px 0 2px;letter-spacing:8px;font-weight:700}
+  .sub{color:#8b98a5;font-size:13px;margin-bottom:6px}
+  #count{font-size:42px;font-weight:700;color:#ffd58a;line-height:1.1}
+  #count .label{font-size:17px;color:#c9b48a;margin-right:8px;letter-spacing:4px}
+  #stage{position:relative;width:340px;height:420px;cursor:pointer;margin-top:4px;touch-action:none}
+  #stage svg{width:100%;height:100%;display:block}
+  #fx{position:absolute;inset:0;pointer-events:none;overflow:visible}
+  .float{position:absolute;font-size:20px;color:#ffd58a;text-shadow:0 1px 3px rgba(0,0,0,.9);white-space:nowrap;will-change:transform,opacity}
+  .egg{color:#9be79b;font-size:23px;letter-spacing:2px}
+  .ripple{position:absolute;border:3px solid rgba(255,140,66,.8);border-radius:50%;transform:translate(-50%,-50%) scaleY(.38);will-change:width,height,opacity}
+  .variants{margin:10px 0 2px;display:flex;gap:8px}
+  .variants label{border:1px solid #2c3642;background:#1a2028;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;color:#c9b48a}
+  .variants input{accent-color:#e8590c;margin-right:4px}
+  .hint{color:#8b98a5;font-size:12px;margin-top:6px;letter-spacing:1px}
+  .bob{transform-box:fill-box;transform-origin:50% 100%;animation:bob 2.6s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-3px)}}
+  .squash{transform-box:fill-box;transform-origin:50% 100%}
+  .mallet{transform-box:fill-box;transform-origin:88% 92%}
+</style>
+</head>
+<body>
+  <h1>敲 球 功 德</h1>
+  <div class="sub">拍球即修行 · 节奏即禅 —— 设计试听稿（非应用实现）</div>
+  <div id="count"><span class="label">功德</span><span id="num">0</span></div>
+
+  <div id="stage" title="点我">
+    <svg viewBox="0 0 340 420" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="ballGrad" cx="0.36" cy="0.3" r="0.85">
+          <stop offset="0" stop-color="#ff9a52"/><stop offset="0.55" stop-color="#e8590c"/><stop offset="1" stop-color="#b84509"/>
+        </radialGradient>
+        <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8a5a2c"/><stop offset="1" stop-color="#5f3c19"/>
+        </linearGradient>
+        <linearGradient id="slitGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1d0e03"/><stop offset="1" stop-color="#4a2408"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="340" width="340" height="80" fill="url(#floorGrad)"/>
+      <g stroke="#4a2e10" stroke-width="1.5" opacity="0.5">
+        <line x1="0" y1="358" x2="340" y2="358"/><line x1="0" y1="382" x2="340" y2="382"/>
+      </g>
+      <path d="M60,420 A150,150 0 0 1 280,420" fill="none" stroke="#d9a05b" stroke-width="2" opacity="0.28"/>
+      <ellipse cx="170" cy="344" rx="98" ry="13" fill="#000" opacity="0.28"/>
+      <path d="M92,300 A78,20 0 0 1 248,300" fill="none" stroke="#b3541e" stroke-width="9" stroke-linecap="round"/>
+      <g class="bob">
+        <g class="squash" id="ballTarget">
+          <circle cx="170" cy="245" r="88" fill="url(#ballGrad)" stroke="#3d1f07" stroke-width="3"/>
+          <g stroke="#3d1f07" stroke-width="4" fill="none" stroke-linecap="round">
+            <path d="M170,157 v176"/><path d="M82,245 h176"/>
+            <path d="M104,180 Q170,245 104,310"/><path d="M236,180 Q170,245 236,310"/>
+          </g>
+          <path d="M132,196 Q170,172 208,196 Q170,184 132,196 Z" fill="url(#slitGrad)" stroke="#1d0e03" stroke-width="2"/>
+          <path d="M140,197 Q170,185 200,197" fill="none" stroke="#7a4a21" stroke-width="1.5" opacity="0.85"/>
+        </g>
+      </g>
+      <path d="M92,300 A78,20 0 0 0 248,300" fill="none" stroke="#ff8c42" stroke-width="9" stroke-linecap="round"/>
+      <g stroke="#f2f2f2" stroke-width="2" fill="none" opacity="0.9" stroke-linecap="round">
+        <path d="M104,306 L138,368"/><path d="M128,312 L152,372"/><path d="M152,316 L164,374"/>
+        <path d="M188,316 L176,374"/><path d="M212,312 L188,372"/><path d="M236,306 L202,368"/>
+        <path d="M118,330 Q170,342 222,330"/><path d="M132,352 Q170,362 208,352"/>
+      </g>
+      <g class="mallet" id="malletTarget">
+        <line x1="298" y1="352" x2="243" y2="228" stroke="#c98a5b" stroke-width="13" stroke-linecap="round"/>
+        <line x1="298" y1="352" x2="243" y2="228" stroke="#a86f3d" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+        <circle cx="239" cy="216" r="24" fill="url(#ballGrad)" stroke="#3d1f07" stroke-width="2.5"/>
+        <g stroke="#3d1f07" stroke-width="2" fill="none" stroke-linecap="round">
+          <path d="M239,192 v48"/><path d="M215,216 h48"/>
+        </g>
+      </g>
+    </svg>
+    <div id="fx"></div>
+  </div>
+
+  <div class="variants">
+    <label><input type="radio" name="v" value="a" checked>A 经典拍球</label>
+    <label><input type="radio" name="v" value="b">B 场馆低沉</label>
+    <label><input type="radio" name="v" value="c">C 拍球+木鱼混音</label>
+  </div>
+  <div class="hint">左键连点球面（或按空格）· 预览稿每 25 击出一次彩蛋（正式版每 100 击）</div>
+
+<script>
+'use strict';
+const stage = document.getElementById('stage');
+const fx = document.getElementById('fx');
+const ball = document.getElementById('ballTarget');
+const mallet = document.getElementById('malletTarget');
+const num = document.getElementById('num');
+let count = 0;
+let ctx = null;
+
+// ---------- 声音：与 WAV 稿同一套参数，现场合成 ----------
+const VARIANTS = {
+  a: { thump: 80, end: .55, slap: .50, decay: .15, wood: 0,   room: 0 },
+  b: { thump: 64, end: .50, slap: .32, decay: .22, wood: 0,   room: 1 },
+  c: { thump: 76, end: .55, slap: .42, decay: .15, wood: .5,  room: 0 },
+};
+function audio() {
+  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+function play(v) {
+  const c = audio(), t = c.currentTime, p = VARIANTS[v];
+  const det = 1 + (Math.random() * 0.06 - 0.03); // 轻微随机音高，连点不机械
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(p.thump * det, t);
+  o.frequency.exponentialRampToValueAtTime(p.thump * p.end * det, t + 0.09);
+  g.gain.setValueAtTime(0.9, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + p.decay);
+  o.connect(g);
+  const nb = c.createBuffer(1, (c.sampleRate * 0.03) | 0, c.sampleRate);
+  const d = nb.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / d.length * 6);
+  const ns = c.createBufferSource(); ns.buffer = nb;
+  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.8;
+  const ng = c.createGain(); ng.gain.setValueAtTime(p.slap, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+  ns.connect(bp); bp.connect(ng);
+  const master = c.createGain(); master.gain.value = 0.9;
+  g.connect(master); ng.connect(master);
+  if (p.wood) {
+    const wo = c.createOscillator(); wo.type = 'sine'; wo.frequency.value = 950;
+    const wg = c.createGain(); wg.gain.setValueAtTime(p.wood * 0.6, t); wg.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+    wo.connect(wg); wg.connect(master);
+    wo.start(t); wo.stop(t + 0.1);
+  }
+  if (p.room) {
+    const dl = c.createDelay(); dl.delayTime.value = 0.024;
+    const fb = c.createGain(); fb.gain.value = 0.3;
+    const wet = c.createGain(); wet.gain.value = 0.18;
+    master.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(c.destination);
+  }
+  master.connect(c.destination);
+  o.start(t); o.stop(t + 0.4); ns.start(t);
+}
+
+// ---------- 动态：挤压回弹（拍球）+ 波纹（弹地）+ 飘字（功德） ----------
+function ripple() {
+  const d = document.createElement('div');
+  d.className = 'ripple';
+  d.style.left = '170px'; d.style.top = '340px';
+  fx.appendChild(d);
+  d.animate(
+    [{ width: '60px', height: '60px', opacity: .85 }, { width: '230px', height: '230px', opacity: 0 }],
+    { duration: 520, easing: 'cubic-bezier(.2,.6,.4,1)' }
+  ).onfinish = () => d.remove();
+}
+function spawnFloat(txt, x, y, egg) {
+  const d = document.createElement('div');
+  d.className = 'float' + (egg ? ' egg' : '');
+  d.textContent = txt;
+  d.style.left = x + 'px'; d.style.top = y + 'px';
+  fx.appendChild(d);
+  const rot = Math.random() * 14 - 7;
+  d.animate(
+    [{ transform: `rotate(${rot}deg) translateY(0)`, opacity: 1 }, { transform: `rotate(${rot}deg) translateY(-52px)`, opacity: 0 }],
+    { duration: egg ? 950 : 750, easing: 'ease-out' }
+  ).onfinish = () => d.remove();
+}
+const EGGS = ['好球！', '手感来了！', '善哉善哉', '六时吉祥', '这节奏，稳了', '稳住，我们能赢'];
+function hit(e) {
+  const v = document.querySelector('input[name=v]:checked').value;
+  play(v);
+  ball.animate(
+    [{ transform: 'scale(1,1)' }, { transform: 'scale(1.09,0.87)', offset: .35 }, { transform: 'scale(.97,1.04)', offset: .72 }, { transform: 'scale(1,1)' }],
+    { duration: 170, easing: 'ease-out' }
+  );
+  mallet.animate(
+    [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-15deg)', offset: .45 }, { transform: 'rotate(0deg)' }],
+    { duration: 130, easing: 'ease-in-out' }
+  );
+  ripple();
+  const r = stage.getBoundingClientRect();
+  const x = (e && e.clientX != null ? e.clientX - r.left : 170) + (Math.random() * 28 - 14);
+  const y = (e && e.clientY != null ? e.clientY - r.top : 200) - 10;
+  spawnFloat('+1 功德', x, y, false);
+  count++;
+  num.textContent = count;
+  if (count % 25 === 0) {
+    spawnFloat(EGGS[(Math.random() * EGGS.length) | 0], 170 + (Math.random() * 80 - 40), 150, true);
+  }
+}
+stage.addEventListener('pointerdown', (e) => { e.preventDefault(); hit(e); });
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') { e.preventDefault(); hit(null); }
+});
+window.addEventListener('contextmenu', (e) => { if (stage.contains(e.target)) e.preventDefault(); });
+</script>
+</body>
+</html>

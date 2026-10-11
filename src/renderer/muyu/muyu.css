@@ -1,0 +1,14 @@
+.muyu-head { text-align: center; padding: 2px 0 0; flex-shrink: 0; }
+#count { font-family: "KaiTi", "STKaiti", "楷体", serif; font-size: 40px; font-weight: 700; color: #ffd58a; line-height: 1.1; }
+#count .label { font-size: 16px; color: #c9b48a; margin-right: 8px; letter-spacing: 4px; }
+#stage { position: relative; flex: 1; min-height: 0; cursor: pointer; touch-action: none; }
+#stage svg { width: 100%; height: 100%; display: block; }
+#fx { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.float { position: absolute; font-family: "KaiTi", "STKaiti", "楷体", serif; font-size: 20px; color: #ffd58a; text-shadow: 0 1px 3px rgba(0,0,0,.9); white-space: nowrap; will-change: transform,opacity; }
+.float.egg { color: #9be79b; font-size: 23px; letter-spacing: 2px; }
+.ripple { position: absolute; border: 3px solid rgba(255,140,66,.8); border-radius: 50%; transform: translate(-50%,-50%) scaleY(.38); will-change: width,height,opacity; }
+.hint { text-align: center; color: #8b98a5; font-size: 11px; padding: 4px 0 8px; flex-shrink: 0; letter-spacing: 1px; }
+.bob { transform-box: view-box; transform-origin: 170px 333px; animation: bob 2.6s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-3px); } }
+.squash { transform-box: view-box; transform-origin: 170px 333px; }
+.mallet { transform-box: view-box; transform-origin: 296px 350px; }

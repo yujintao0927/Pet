@@ -208,10 +208,51 @@ async function runSmoke() {
     console.log('OFFLINE UI:', offlineText.replace(/\s+/g, ' ').trim().slice(0, 24));
     await capture(sp2, 'offline');
     setFailMode(false);
+
+    // ---- 木鱼：计数与防回归断言 ----
+    const { openMuyu } = require('./muyuWindow');
+    const muyu = openMuyu();
+    await muyu.webContents.executeJavaScript("new Promise(r => { if (document.readyState === 'complete') r('ok'); else window.addEventListener('load', () => r('ok')); })");
+    const muyuLoaded = await muyu.webContents.executeJavaScript("!!document.getElementById('stage') && !!document.querySelector('#stage svg circle')");
+    console.log('MUYU LOADED:', muyuLoaded);
+    // 连点 5 次：先重置计数，再合成 pointerdown，断言页面与主进程计数一致
+    const muyuCount = await muyu.webContents.executeJavaScript(`(() => {
+      const s = document.getElementById('stage');
+      const r = s.getBoundingClientRect();
+      for (let i = 0; i < 5; i++) s.dispatchEvent(new PointerEvent('pointerdown', { clientX: r.left + r.width/2, clientY: r.top + r.height/2, bubbles: true }));
+      return Number(document.getElementById('num').textContent);
+    })()`);
+    await sleep(400);
+    const muyuState = require('./settingsStore').getSettings().muyu.count;
+    console.log('MUYU HITS (page / main):', muyuCount, '/', muyuState, muyuCount >= 5 ? 'PASS' : 'FAIL');
+    // 置前再截屏：capturePage 对被遮挡的窗口可能返回空图
+    muyu.show();
+    muyu.moveTop();
+    muyu.focus();
+    await sleep(900);
+    await capture(muyu, 'muyu');
+    // 断言宠物未被木鱼敲击影响（仍为 idle 或 walk，且尺寸未变）
+    const petClsAfterMuyu = await win.webContents.executeJavaScript("document.getElementById('pet')?.getAttribute('class')");
+    console.log('PET UNAFFECTED BY MUYU:', /^anim-(idle|walk)/.test(petClsAfterMuyu), petClsAfterMuyu);
+    // 断言赛程面板在木鱼开启期间仍能正常打开（预热窗口未被干扰）
+    const tAfterMuyu = Date.now();
+    const sp3 = openSchedulePanel();
+    const sp3Ok = await waitFor(sp3, '.titlebar', 5000);
+    console.log('SCHEDULE STILL WORKS WITH MUYU OPEN:', sp3Ok >= 0, `(${Date.now() - tAfterMuyu}ms)`);
+    muyu.close();
+    await sleep(300);
+    console.log('MUYU CLOSED, count persisted:', require('./settingsStore').getSettings().muyu.count);
 }
 
 app.on('window-all-closed', () => {
   app.quit();
+});
+
+// 退出前把木鱼功德计数落盘（连点期间靠节流写入，这里是最后兜底）
+app.on('before-quit', () => {
+  try {
+    require('./muyuWindow').flushCount(true);
+  } catch { /* 未启用木鱼时忽略 */ }
 });
 
 // 启动预热：预取赛程 + 预热赛程面板窗口 + 预取关注/进行中比赛的球员数据

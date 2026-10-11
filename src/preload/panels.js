@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('boardpet', {
   setSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   openGame: (eventId) => ipcRenderer.send('panel:openGame', eventId),
   openSettings: () => ipcRenderer.send('panel:openSettings'),
+  openMuyu: () => ipcRenderer.send('panel:openMuyu'),
   prefetchSummary: (eventId) => ipcRenderer.invoke('data:prefetchSummary', eventId),
   on: (channel, cb) => {
     const allowed = ['events:gameUpdate', 'events:gameDetail', 'events:settingsChanged'];

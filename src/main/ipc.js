@@ -4,6 +4,7 @@ const { getSettings, updateSettings } = require('./settingsStore');
 const { movePet, resizePet, savePetPosition, setAlwaysOnTop, setWalkEnabled, setDragging } = require('./petWindow');
 const { openSchedulePanel, openGameDetail, openSettings: openSettingsWindow } = require('./panelWindows');
 const { getScoreboard, getSummary, getTeams, prefetchSummaries, onUpdate } = require('./dataService');
+const { openMuyu, registerHit } = require('./muyuWindow');
 
 function broadcast(channel, payload) {
   for (const wc of webContents.getAllWebContents()) {
@@ -39,6 +40,11 @@ function registerIpc() {
 
   ipcMain.on('panel:openGame', (_e, eventId) => openGameDetail(eventId));
   ipcMain.on('panel:openSettings', () => openSettingsWindow());
+  ipcMain.on('panel:openMuyu', () => openMuyu());
+
+  // 木鱼：专用通道，不走 settings:set（避免 settingsChanged 广播打断宠物动画）；计数在主进程节流落盘
+  ipcMain.handle('muyu:getCount', () => getSettings().muyu.count || 0);
+  ipcMain.on('muyu:hit', () => registerHit());
 
   ipcMain.on('pet:move', (_e, dx, dy) => movePet(dx, dy));
   ipcMain.on('pet:resize', (_e, pct) => resizePet(pct));

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+  <link rel="stylesheet" href="../common.css" />
+  <link rel="stylesheet" href="muyu.css" />
+</head>
+<body>
+  <div class="titlebar">
+    <div class="logo"></div>
+    <h1>敲球功德</h1>
+    <button class="close" id="btn-close">✕</button>
+  </div>
+  <div class="muyu-head">
+    <div id="count"><span class="label">功德</span><span id="num">0</span></div>
+  </div>
+  <div id="stage" title="点我">
+    <svg viewBox="0 0 340 420" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="ballGrad" cx="0.36" cy="0.3" r="0.85">
+          <stop offset="0" stop-color="#ff9a52"/><stop offset="0.55" stop-color="#e8590c"/><stop offset="1" stop-color="#b84509"/>
+        </radialGradient>
+        <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8a5a2c"/><stop offset="1" stop-color="#5f3c19"/>
+        </linearGradient>
+        <linearGradient id="slitGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1d0e03"/><stop offset="1" stop-color="#4a2408"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="340" width="340" height="80" fill="url(#floorGrad)"/>
+      <g stroke="#4a2e10" stroke-width="1.5" opacity="0.5">
+        <line x1="0" y1="358" x2="340" y2="358"/><line x1="0" y1="382" x2="340" y2="382"/>
+      </g>
+      <path d="M60,420 A150,150 0 0 1 280,420" fill="none" stroke="#d9a05b" stroke-width="2" opacity="0.28"/>
+      <ellipse cx="170" cy="344" rx="98" ry="13" fill="#000" opacity="0.28"/>
+      <path d="M92,300 A78,20 0 0 1 248,300" fill="none" stroke="#b3541e" stroke-width="9" stroke-linecap="round"/>
+      <g class="bob">
+        <g class="squash" id="ballTarget">
+          <circle cx="170" cy="245" r="88" fill="url(#ballGrad)" stroke="#3d1f07" stroke-width="3"/>
+          <g stroke="#3d1f07" stroke-width="4" fill="none" stroke-linecap="round">
+            <path d="M170,157 v176"/><path d="M82,245 h176"/>
+            <path d="M104,180 Q170,245 104,310"/><path d="M236,180 Q170,245 236,310"/>
+          </g>
+          <path d="M132,196 Q170,172 208,196 Q170,184 132,196 Z" fill="url(#slitGrad)" stroke="#1d0e03" stroke-width="2"/>
+          <path d="M140,197 Q170,185 200,197" fill="none" stroke="#7a4a21" stroke-width="1.5" opacity="0.85"/>
+        </g>
+      </g>
+      <path d="M92,300 A78,20 0 0 0 248,300" fill="none" stroke="#ff8c42" stroke-width="9" stroke-linecap="round"/>
+      <g stroke="#f2f2f2" stroke-width="2" fill="none" opacity="0.9" stroke-linecap="round">
+        <path d="M104,306 L138,368"/><path d="M128,312 L152,372"/><path d="M152,316 L164,374"/>
+        <path d="M188,316 L176,374"/><path d="M212,312 L188,372"/><path d="M236,306 L202,368"/>
+        <path d="M118,330 Q170,342 222,330"/><path d="M132,352 Q170,362 208,352"/>
+      </g>
+      <g class="mallet" id="malletTarget">
+        <line x1="298" y1="352" x2="243" y2="228" stroke="#c98a5b" stroke-width="13" stroke-linecap="round"/>
+        <line x1="298" y1="352" x2="243" y2="228" stroke="#a86f3d" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+        <circle cx="239" cy="216" r="24" fill="url(#ballGrad)" stroke="#3d1f07" stroke-width="2.5"/>
+        <g stroke="#3d1f07" stroke-width="2" fill="none" stroke-linecap="round">
+          <path d="M239,192 v48"/><path d="M215,216 h48"/>
+        </g>
+      </g>
+    </svg>
+    <div id="fx"></div>
+  </div>
+  <div class="hint">左键连点球面或按空格 · 敲球即修行</div>
+  <script src="muyu.js"></script>
+</body>
+</html>
